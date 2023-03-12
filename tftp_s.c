@@ -3,14 +3,23 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef _WINDOWS
+#include "win_unistd.h"
+#else
 #include <unistd.h>
+#endif
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
+#ifdef _WINDOWS
+#include <ws2tcpip.h>
+#include <winsock.h>
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#endif
 #include "utility.h"
 
 void *get_in_addr(struct sockaddr *sa)
@@ -57,6 +66,23 @@ int main(void){
 	char buf[MAXBUFLEN];
 	socklen_t addr_len;
 	char s[INET6_ADDRSTRLEN];
+
+#ifdef _WINDOWS
+	WORD wVersionRequested;
+	WSADATA wsaData;
+	int err;
+
+	/* Use the MAKEWORD(lowbyte, highbyte) macro declared in Windef.h */
+	wVersionRequested = MAKEWORD(2, 2);
+
+	err = WSAStartup(wVersionRequested, &wsaData);
+	if (err != 0) {
+		/* Tell the user that we could not find a usable */
+		/* Winsock DLL.                                  */
+		printf("WSAStartup failed with error: %d\n", err);
+		return 1;
+	}
+#endif /*_WINDOWS*/
 
 	//===========CONFIGURATION OF SERVER - START===========
 	memset(&hints, 0, sizeof hints);

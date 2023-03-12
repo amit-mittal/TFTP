@@ -3,15 +3,24 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef _WINDOWS
+#include "win_unistd.h"
+#else
 #include <unistd.h>
+#endif
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
+#ifdef _WINDOWS
+#include <ws2tcpip.h>
+#include <winsock.h>
+#else
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#endif
 #include "utility.h"
 
 void *get_in_addr(struct sockaddr *sa)
@@ -58,7 +67,24 @@ int main(int argc, char* argv[]){
 	char s[INET6_ADDRSTRLEN];
 	struct sockaddr_storage their_addr;
 	socklen_t addr_len;
-		
+
+#ifdef _WINDOWS
+	WORD wVersionRequested;
+	WSADATA wsaData;
+	int err;
+
+	/* Use the MAKEWORD(lowbyte, highbyte) macro declared in Windef.h */
+	wVersionRequested = MAKEWORD(2, 2);
+
+	err = WSAStartup(wVersionRequested, &wsaData);
+	if (err != 0) {
+		/* Tell the user that we could not find a usable */
+		/* Winsock DLL.                                  */
+		printf("WSAStartup failed with error: %d\n", err);
+		return 1;
+	}
+#endif /*_WINDOWS*/
+
 	if(argc != 4){// CHECKS IF args ARE VALID
 		fprintf(stderr,"USAGE: tftp_c GET/PUT server filename\n");
 		exit(1);
